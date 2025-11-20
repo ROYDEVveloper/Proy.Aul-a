@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,16 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,15 +20,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 // TODO: remove mock data
-const estudiantesData = [
+const initialEstudiantesData = [
   { id: "1", nombre: "Juan Pérez", programa: "Ing. Sistemas", semestre: 1, aula: "1001", clase: "1201" },
   { id: "2", nombre: "María González", programa: "Ing. Sistemas", semestre: 1, aula: "1001", clase: "1201" },
   { id: "3", nombre: "Carlos Rodríguez", programa: "Ing. Civil", semestre: 2, aula: "1002", clase: "1202" },
   { id: "4", nombre: "Ana Martínez", programa: "Arquitectura", semestre: 1, aula: "1003", clase: "1204" },
   { id: "5", nombre: "Luis Sánchez", programa: "Ing. Industrial", semestre: 3, aula: "1004", clase: "1205" },
+  { id: "6", nombre: "Sandra López", programa: "Ing. Sistemas", semestre: 2, aula: "1002", clase: "1203" },
+  { id: "7", nombre: "Pedro Ramírez", programa: "Ing. Civil", semestre: 1, aula: "1001", clase: "1202" },
+  { id: "8", nombre: "Laura Torres", programa: "Diseño Gráfico", semestre: 2, aula: "1002", clase: "1206" },
 ];
 
 // TODO: remove mock data
@@ -51,6 +56,8 @@ const programas = [
 export default function Estudiantes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [estudiantes, setEstudiantes] = useState(initialEstudiantesData);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre: "",
     programa: "",
@@ -58,12 +65,21 @@ export default function Estudiantes() {
   });
   const { toast } = useToast();
 
-  const filteredEstudiantes = estudiantesData.filter((estudiante) =>
+  const filteredEstudiantes = estudiantes.filter((estudiante) =>
     estudiante.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newEstudiante = {
+      id: Date.now().toString(),
+      nombre: formData.nombre,
+      programa: formData.programa,
+      semestre: parseInt(formData.semestre),
+      aula: "1001",
+      clase: "1201",
+    };
+    setEstudiantes([...estudiantes, newEstudiante]);
     console.log("Registrar estudiante:", formData);
     toast({
       title: "Estudiante registrado",
@@ -71,6 +87,17 @@ export default function Estudiantes() {
     });
     setDialogOpen(false);
     setFormData({ nombre: "", programa: "", semestre: "" });
+  };
+
+  const handleDelete = () => {
+    if (deleteId) {
+      setEstudiantes(estudiantes.filter((e) => e.id !== deleteId));
+      toast({
+        title: "Estudiante eliminado",
+        description: "El estudiante ha sido eliminado del sistema",
+      });
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -184,36 +211,70 @@ export default function Estudiantes() {
             data-testid="input-search-student"
           />
         </div>
+        <Badge variant="outline" className="text-sm">
+          {filteredEstudiantes.length} estudiante{filteredEstudiantes.length !== 1 ? "s" : ""}
+        </Badge>
       </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Programa</TableHead>
-              <TableHead>Semestre</TableHead>
-              <TableHead>Aula</TableHead>
-              <TableHead>Clase</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredEstudiantes.map((estudiante) => (
-              <TableRow key={estudiante.id} data-testid={`row-estudiante-${estudiante.id}`}>
-                <TableCell className="font-medium">{estudiante.nombre}</TableCell>
-                <TableCell>
-                  <Badge>{estudiante.programa}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">Semestre {estudiante.semestre}</Badge>
-                </TableCell>
-                <TableCell className="font-mono text-sm">{estudiante.aula}</TableCell>
-                <TableCell className="font-mono text-sm">{estudiante.clase}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredEstudiantes.map((estudiante) => (
+          <Card key={estudiante.id} className="hover-elevate" data-testid={`card-estudiante-${estudiante.id}`}>
+            <CardHeader>
+              <CardTitle className="flex items-start justify-between gap-2">
+                <span className="text-lg">{estudiante.nombre}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteId(estudiante.id)}
+                  data-testid={`button-delete-${estudiante.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Programa</span>
+                <Badge>{estudiante.programa}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Semestre</span>
+                <Badge variant="outline">Semestre {estudiante.semestre}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Aula</span>
+                <span className="font-mono text-sm font-semibold">{estudiante.aula}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Clase</span>
+                <span className="font-mono text-sm font-semibold">{estudiante.clase}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar estudiante?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El estudiante será eliminado permanentemente del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
