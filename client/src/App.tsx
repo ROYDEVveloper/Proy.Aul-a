@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Footer } from "@/components/footer";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Estudiantes from "@/pages/estudiantes";
@@ -52,6 +53,7 @@ export default function App() {
                     <Router />
                   </div>
                 </main>
+                <Footer />
               </div>
             </div>
           </SidebarProvider>
