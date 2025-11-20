@@ -58,6 +58,12 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
+          <div className="flex items-center gap-2 px-2 py-2 mb-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white font-bold text-sm">
+              Wk
+            </div>
+            <span className="font-semibold text-sm">EasyWork</span>
+          </div>
           <SidebarGroupLabel>Gestión Académica</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
