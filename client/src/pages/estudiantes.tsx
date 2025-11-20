@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,73 +32,103 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-
-// TODO: remove mock data
-const initialEstudiantesData = [
-  { id: "1", nombre: "Juan Pérez", programa: "Ing. Sistemas", semestre: 1, aula: "1001", clase: "1201" },
-  { id: "2", nombre: "María González", programa: "Ing. Sistemas", semestre: 1, aula: "1001", clase: "1201" },
-  { id: "3", nombre: "Carlos Rodríguez", programa: "Ing. Civil", semestre: 2, aula: "1002", clase: "1202" },
-  { id: "4", nombre: "Ana Martínez", programa: "Arquitectura", semestre: 1, aula: "1003", clase: "1204" },
-  { id: "5", nombre: "Luis Sánchez", programa: "Ing. Industrial", semestre: 3, aula: "1004", clase: "1205" },
-  { id: "6", nombre: "Sandra López", programa: "Ing. Sistemas", semestre: 2, aula: "1002", clase: "1203" },
-  { id: "7", nombre: "Pedro Ramírez", programa: "Ing. Civil", semestre: 1, aula: "1001", clase: "1202" },
-  { id: "8", nombre: "Laura Torres", programa: "Diseño Gráfico", semestre: 2, aula: "1002", clase: "1206" },
-];
-
-// TODO: remove mock data
-const programas = [
-  "Ing. Sistemas",
-  "Ing. Civil",
-  "Ing. Industrial",
-  "Arquitectura",
-  "Diseño Gráfico",
-];
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 export default function Estudiantes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [estudiantes, setEstudiantes] = useState(initialEstudiantesData);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre: "",
-    programa: "",
+    programaId: "",
     semestre: "",
   });
   const { toast } = useToast();
 
-  const filteredEstudiantes = estudiantes.filter((estudiante) =>
-    estudiante.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: estudiantes = [] } = useQuery({
+    queryKey: ["/api/estudiantes"],
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newEstudiante = {
-      id: Date.now().toString(),
-      nombre: formData.nombre,
-      programa: formData.programa,
-      semestre: parseInt(formData.semestre),
-      aula: "1001",
-      clase: "1201",
-    };
-    setEstudiantes([...estudiantes, newEstudiante]);
-    console.log("Registrar estudiante:", formData);
-    toast({
-      title: "Estudiante registrado",
-      description: `${formData.nombre} ha sido registrado exitosamente`,
-    });
-    setDialogOpen(false);
-    setFormData({ nombre: "", programa: "", semestre: "" });
-  };
+  const { data: programas = [] } = useQuery({
+    queryKey: ["/api/programas"],
+  });
 
-  const handleDelete = () => {
-    if (deleteId) {
-      setEstudiantes(estudiantes.filter((e) => e.id !== deleteId));
+  const { data: aulas = [] } = useQuery({
+    queryKey: ["/api/aulas"],
+  });
+
+  const { data: clases = [] } = useQuery({
+    queryKey: ["/api/clases"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/estudiantes", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/estudiantes"] });
+      toast({
+        title: "Estudiante registrado",
+        description: `${formData.nombre} ha sido registrado exitosamente`,
+      });
+      setDialogOpen(false);
+      setFormData({ nombre: "", programaId: "", semestre: "" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/estudiantes/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/estudiantes"] });
       toast({
         title: "Estudiante eliminado",
         description: "El estudiante ha sido eliminado del sistema",
       });
       setDeleteId(null);
+    },
+  });
+
+  const filteredEstudiantes = (estudiantes as any[]).filter((estudiante: any) =>
+    estudiante.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const aulaId = (aulas as any[])[0]?.id || "";
+    const claseId = (clases as any[])[0]?.id || "";
+    
+    createMutation.mutate({
+      nombre: formData.nombre,
+      programaId: formData.programaId,
+      semestre: parseInt(formData.semestre),
+      aulaId,
+      claseId,
+    });
+  };
+
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId);
     }
+  };
+
+  const getProgramaNombre = (programaId: string) => {
+    const programa = (programas as any[]).find((p: any) => p.id === programaId);
+    return programa?.nombre || "";
+  };
+
+  const getAulaCodigo = (aulaId: string) => {
+    const aula = (aulas as any[]).find((a: any) => a.id === aulaId);
+    return aula?.codigo || "";
+  };
+
+  const getClaseCodigo = (claseId: string) => {
+    const clase = (clases as any[]).find((c: any) => c.id === claseId);
+    return clase?.codigo || "";
   };
 
   return (
@@ -140,17 +171,17 @@ export default function Estudiantes() {
               <div className="space-y-2">
                 <Label htmlFor="programa">Programa</Label>
                 <Select
-                  value={formData.programa}
-                  onValueChange={(value) => setFormData({ ...formData, programa: value })}
+                  value={formData.programaId}
+                  onValueChange={(value) => setFormData({ ...formData, programaId: value })}
                   required
                 >
                   <SelectTrigger id="programa" data-testid="select-program">
                     <SelectValue placeholder="Selecciona un programa" />
                   </SelectTrigger>
                   <SelectContent>
-                    {programas.map((programa) => (
-                      <SelectItem key={programa} value={programa}>
-                        {programa}
+                    {(programas as any[]).map((programa: any) => (
+                      <SelectItem key={programa.id} value={programa.id}>
+                        {programa.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -175,7 +206,7 @@ export default function Estudiantes() {
                   </SelectContent>
                 </Select>
               </div>
-              {formData.programa && formData.semestre && (
+              {formData.programaId && formData.semestre && (aulas as any[])[0] && (clases as any[])[0] && (
                 <Card className="bg-muted">
                   <CardHeader>
                     <CardTitle className="text-sm">Asignación Automática</CardTitle>
@@ -183,17 +214,22 @@ export default function Estudiantes() {
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Aula:</span>
-                      <span className="font-mono font-semibold">1001</span>
+                      <span className="font-mono font-semibold">{(aulas as any[])[0].codigo}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Clase:</span>
-                      <span className="font-mono font-semibold">1201</span>
+                      <span className="font-mono font-semibold">{(clases as any[])[0].codigo}</span>
                     </div>
                   </CardContent>
                 </Card>
               )}
-              <Button type="submit" className="w-full" data-testid="button-submit-student">
-                Registrar Estudiante
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={createMutation.isPending}
+                data-testid="button-submit-student"
+              >
+                {createMutation.isPending ? "Registrando..." : "Registrar Estudiante"}
               </Button>
             </form>
           </DialogContent>
@@ -217,7 +253,7 @@ export default function Estudiantes() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredEstudiantes.map((estudiante) => (
+        {filteredEstudiantes.map((estudiante: any) => (
           <Card key={estudiante.id} className="hover-elevate" data-testid={`card-estudiante-${estudiante.id}`}>
             <CardHeader>
               <CardTitle className="flex items-start justify-between gap-2">
@@ -236,7 +272,7 @@ export default function Estudiantes() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Programa</span>
-                <Badge>{estudiante.programa}</Badge>
+                <Badge>{getProgramaNombre(estudiante.programaId)}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Semestre</span>
@@ -244,11 +280,11 @@ export default function Estudiantes() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Aula</span>
-                <span className="font-mono text-sm font-semibold">{estudiante.aula}</span>
+                <span className="font-mono text-sm font-semibold">{getAulaCodigo(estudiante.aulaId)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Clase</span>
-                <span className="font-mono text-sm font-semibold">{estudiante.clase}</span>
+                <span className="font-mono text-sm font-semibold">{getClaseCodigo(estudiante.claseId)}</span>
               </div>
             </CardContent>
           </Card>

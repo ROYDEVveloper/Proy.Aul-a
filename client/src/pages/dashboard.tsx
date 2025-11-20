@@ -1,17 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DoorOpen, BookOpen, GraduationCap, Plus, FileEdit } from "lucide-react";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-
-// TODO: remove mock data
-const stats = {
-  totalStudents: 342,
-  totalAulas: 12,
-  totalClases: 45,
-  totalPrograms: 5,
-};
 
 // TODO: remove mock data
 const gradeDistribution = [
@@ -23,15 +16,6 @@ const gradeDistribution = [
 ];
 
 // TODO: remove mock data
-const programEnrollment = [
-  { name: "Ing. Sistemas", value: 98, color: "hsl(var(--chart-1))" },
-  { name: "Ing. Civil", value: 76, color: "hsl(var(--chart-2))" },
-  { name: "Ing. Industrial", value: 65, color: "hsl(var(--chart-3))" },
-  { name: "Arquitectura", value: 54, color: "hsl(var(--chart-4))" },
-  { name: "Diseño Gráfico", value: 49, color: "hsl(var(--chart-5))" },
-];
-
-// TODO: remove mock data
 const recentActivity = [
   { action: "Estudiante registrado", detail: "María González - Ing. Sistemas", time: "Hace 5 min" },
   { action: "Notas actualizadas", detail: "Clase 1201 - Cálculo I", time: "Hace 1 hora" },
@@ -39,6 +23,27 @@ const recentActivity = [
 ];
 
 export default function Dashboard() {
+  const { data: estudiantes = [] } = useQuery({ queryKey: ["/api/estudiantes"] });
+  const { data: aulas = [] } = useQuery({ queryKey: ["/api/aulas"] });
+  const { data: clases = [] } = useQuery({ queryKey: ["/api/clases"] });
+  const { data: programas = [] } = useQuery({ queryKey: ["/api/programas"] });
+
+  const programEnrollment = (programas as any[]).map((programa: any, index: number) => {
+    const count = (estudiantes as any[]).filter((e: any) => e.programaId === programa.id).length;
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4", 
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8",
+    ];
+    return {
+      name: programa.nombre,
+      value: count,
+      color: colors[index % colors.length],
+    };
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -53,25 +58,25 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Estudiantes"
-          value={stats.totalStudents}
+          value={(estudiantes as any[]).length}
           icon={Users}
           testId="text-total-students"
         />
         <StatCard
           title="Total Aulas"
-          value={stats.totalAulas}
+          value={(aulas as any[]).length}
           icon={DoorOpen}
           testId="text-total-aulas"
         />
         <StatCard
           title="Total Clases"
-          value={stats.totalClases}
+          value={(clases as any[]).length}
           icon={BookOpen}
           testId="text-total-clases"
         />
         <StatCard
           title="Programas"
-          value={stats.totalPrograms}
+          value={(programas as any[]).length}
           icon={GraduationCap}
           testId="text-total-programs"
         />
@@ -96,7 +101,7 @@ export default function Dashboard() {
                     borderRadius: "var(--radius)",
                   }}
                 />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#FF6B6B" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -120,7 +125,7 @@ export default function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {programEnrollment.map((entry, index) => (
+                  {programEnrollment.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
