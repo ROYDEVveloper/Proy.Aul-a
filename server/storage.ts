@@ -18,7 +18,7 @@ import type {
 } from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set");
+  throw new Error("DATABASE_URL must be set. Please configure it in Replit Secrets or add it to .env file");
 }
 
 const sql = neon(process.env.DATABASE_URL);
