@@ -1,20 +1,13 @@
 [build]
   command = "npm run build"
-  publish = "dist"
+  publish = "dist/public"
 
+# DESACTIVAR empaquetado de dependencias
 [functions]
   directory = "server"
-  node_bundler = "esbuild"
-
-# Permitir ESM en funciones
-[functions."*"]
-  format = "esm"
-
-# Compatibilidad para módulos externos
-[functions.nodejs_compat]
-  external_node_modules = ["@babel/preset-typescript"]
+  node_bundler = "none"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/index"
   status = 200
