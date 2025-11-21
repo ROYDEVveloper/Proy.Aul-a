@@ -5,6 +5,9 @@
 [functions]
   directory = "server"
   node_bundler = "esbuild"
+  external_node_modules = ["@babel/preset-typescript"]
+  nodejs_compat = true
+  format = "esm"
 
 [[redirects]]
   from = "/api/*"
