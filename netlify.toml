@@ -1,18 +1,18 @@
 [build]
   command = "npm run build"
-  publish = "dist/public"
+  publish = "dist"
 
 [functions]
   directory = "server"
   node_bundler = "esbuild"
 
-# Habilitar ESM
-[functions.*]
+# Permitir ESM en funciones
+[functions."*"]
   format = "esm"
 
-# Módulos que Netlify no puede resolver
+# Compatibilidad para módulos externos
 [functions.nodejs_compat]
-  external_node_modules = ["@neondatabase/serverless", "ws"]
+  external_node_modules = ["@babel/preset-typescript"]
 
 [[redirects]]
   from = "/api/*"
