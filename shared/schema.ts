@@ -1,3 +1,10 @@
+export const actividadReciente = pgTable("actividad_reciente", {
+  id: integer("id").primaryKey().notNull().default(sql`nextval('actividad_reciente_id_seq')`),
+  usuario: varchar("usuario", { length: 100 }),
+  accion: varchar("accion", { length: 255 }),
+  detalles: text("detalles"),
+  fecha: text("fecha"),
+});
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";

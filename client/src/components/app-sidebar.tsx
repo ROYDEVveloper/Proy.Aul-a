@@ -59,9 +59,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <div className="flex items-center gap-2 px-2 py-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white font-bold text-sm">
-              Wk
-            </div>
+            <img src="/logo.png" alt="EasyWork Logo" className="w-10 h-10 rounded-md" />
             <span className="font-semibold text-sm">EasyWork</span>
           </div>
           <SidebarGroupLabel>Gestión Académica</SidebarGroupLabel>
